@@ -20,4 +20,5 @@ sum(unique_letters$count)
 identical_letters <- responses %>%
   mutate(answers = strsplit(answers, '')) %>%
   group_by(group) %>%
+  summarise(count = Reduce(intersect, questions) %>% length)
 sum(identical_letters$count)
