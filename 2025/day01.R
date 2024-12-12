@@ -1,7 +1,7 @@
 library(tidyverse)
 library(cookiemonster)
 library(httr2)
-# add_cookies('2025/d73ec6bb-ed6d-4fbb-9431-cc1356b4822d.txt')
+# add_cookies('.txt')
 
 # Part 1 ####
 
@@ -40,7 +40,7 @@ print(total_distance)
 
 # Part 2 ####
 
-## Function to calculate similarity score
+## Function for part 2
 calculate_similarity_score <- function(left_data, right_data) {
   
   # Count occurrences of each number in the right list
@@ -65,7 +65,6 @@ calculate_similarity_score <- function(left_data, right_data) {
 ## Test
 test_score <- calculate_similarity_score(left_list, right_list)
 print(test_score)
-
 
 ## Result
 similarity_score <- calculate_similarity_score(input$left, input$right)
