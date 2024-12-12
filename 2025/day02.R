@@ -59,3 +59,42 @@ num_safe_reports <- analyse_reports(input)
 print(num_safe_reports)
 
 # Part 2 ####
+
+## Modify above function to include the problem dampener
+is_safe_with_dampener <- function(report_line) {
+  
+  # Convert the space-separated string into a numeric vector
+  levels <- str_split(report_line, " ", simplify = TRUE) %>% as.numeric()
+  
+  # First check if the report is already safe
+  if (is_safe(levels)) {
+    return(TRUE)
+  }
+  
+  # Check if removing a single level makes the report safe
+  for (i in seq_along(levels)) {
+    # Remove the ith level and test safety
+    modified_levels <- levels[-i]
+    if (is_safe(modified_levels)) {
+      return(TRUE)
+    }
+  }
+  
+  # If no single removal makes it safe, return FALSE
+  return(FALSE)
+}
+
+## Do the same again
+analyse_reports_with_dampener <- function(lines) {
+  
+  # Apply the `is_safe_with_dampener` function to each report
+  sum(sapply(lines, is_safe_with_dampener))
+}
+
+## Test
+test_safe_reports_with_dampener <- analyse_reports_with_dampener(example)
+print(test_safe_reports_with_dampener)
+
+## Result
+num_safe_reports_with_dampener <- analyse_reports_with_dampener(input)
+print(num_safe_reports_with_dampener)
