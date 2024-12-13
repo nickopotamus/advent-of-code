@@ -3,7 +3,7 @@ library(cookiemonster)
 library(httr2)
 # add_cookies('.txt')
 
-# Part 1 ####
+# Data ####
 
 ## Example data
 left_list <- c(3, 4, 2, 1, 3, 3)
@@ -15,6 +15,8 @@ input <- request("https://adventofcode.com/2024/day/1/input") %>%
   req_perform() %>% 
   resp_body_string() %>% 
   read_table(col_names = c("left", "right"))
+
+# Part 1 ####
 
 ## Function for part 1
 calculate_total_distance <- function(left_data, right_data) {

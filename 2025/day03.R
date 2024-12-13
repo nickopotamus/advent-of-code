@@ -2,16 +2,19 @@ library(tidyverse)
 library(cookiemonster)
 library(httr2)
 
-# Part 1 ####
+# Data ####
 
 ## Example data
 example <- "xmul(2,4)%&mul[3,7]!@^do_not_mul(5,5)+mul(32,64]then(mul(11,8)mul(8,5))"
+example_2 <- "xmul(2,4)&mul[3,7]!^don't()_mul(5,5)+mul(32,64](mul(11,8)undo()?mul(8,5))"
 
 ## Get input data
 input <- request("https://adventofcode.com/2024/day/3/input") %>% 
   req_options(cookie = get_cookies("adventofcode.com", as = "string")) %>% 
   req_perform() %>% 
   resp_body_string() 
+
+# Part 1 ####
 
 ## Extract and process valid mul instructions
 process_memory <- function(memory_string) {
@@ -48,8 +51,6 @@ total_sum <- process_memory(input)
 print(total_sum)
 
 # Part 2 ####
-
-example_2 <- "xmul(2,4)&mul[3,7]!^don't()_mul(5,5)+mul(32,64](mul(11,8)undo()?mul(8,5))"
 
 ## Process corrupted memory with do() and don't() logic
 process_memory_with_conditions <- function(memory_string) {

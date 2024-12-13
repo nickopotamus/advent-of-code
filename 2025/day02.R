@@ -2,7 +2,7 @@ library(tidyverse)
 library(cookiemonster)
 library(httr2)
 
-# Part 1 ####
+# Data ####
 
 ## Example data
 example <- c(
@@ -20,16 +20,15 @@ input_raw <- request("https://adventofcode.com/2024/day/2/input") %>%
   req_perform() %>% 
   resp_body_string() 
 
-# Split input into reports (lines)
-input <- str_split(input_raw, "\n", simplify = FALSE)[[1]]
+input <- str_split(input_raw, "\n", simplify = FALSE)[[1]] # Split input into reports (lines)
+input <- input[input != ""]                                # Filter empty lines (the last one)
 
-# Filter empty lines (the last one)
-input <- input[input != ""]
+# Part 1 ####
 
 ## Check if a single report is safe
 is_safe <- function(report_line) {
   
-  # Convert the space-separated string into a numeric vector
+  # Convert space-separated string into a numeric vector
   levels <- str_split(report_line, " ", simplify = TRUE) %>% as.numeric()
   
   # Check if all differences between adjacent levels are within [-3, -1] or [1, 3]
@@ -46,7 +45,7 @@ is_safe <- function(report_line) {
 ## Check a full dataset of reports
 analyse_reports <- function(data) {
 
-  # Apply the `is_safe` function to each report
+  # Apply is_safe() to each report and total number TRUE
   sum(sapply(data, is_safe))
 }
 
@@ -84,9 +83,7 @@ is_safe_with_dampener <- function(report_line) {
   return(FALSE)
 }
 
-## Do the same again
 analyse_reports_with_dampener <- function(lines) {
-  
   # Apply the `is_safe_with_dampener` function to each report
   sum(sapply(lines, is_safe_with_dampener))
 }
