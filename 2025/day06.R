@@ -1,4 +1,7 @@
 library(tidyverse)
+library(cookiemonster)
+library(httr2)
+library(furrr)
 
 # Data ####
 
@@ -37,20 +40,6 @@ turn_right <- function(dir) {
          "R" = "D",
          "D" = "L",
          "L" = "U")
-}
-
-# Function to check if the position is within bounds
-in_bounds <- function(pos) {
-  r <- pos[1]
-  c <- pos[2]
-  r > 0 && r <= rows && c > 0 && c <= cols
-}
-
-# Function to check if there is an obstacle
-is_obstacle <- function(pos, temp_map) {
-  r <- pos[1]
-  c <- pos[2]
-  substr(temp_map[r], c, c) == "#"
 }
 
 # Count the total number of "." in the map
@@ -97,6 +86,20 @@ simulate_guard_patrol <- function(input_map) {
   
   # Initialize visited positions as a list
   visited <- list(paste(guard_pos, collapse = ","))
+  
+  # Function to check if the position is within bounds
+  in_bounds <- function(pos) {
+    r <- pos[1]
+    c <- pos[2]
+    r > 0 && r <= rows && c > 0 && c <= cols
+  }
+  
+  # Function to check if there is an obstacle
+  is_obstacle <- function(pos) {
+    r <- pos[1]
+    c <- pos[2]
+    substr(map[r], c, c) == "#"
+  }
   
   # Simulate the patrol
   repeat {
@@ -156,6 +159,20 @@ simulate_guard_with_obstruction <- function(input_map) {
     if (!is.null(guard_pos)) break
   }
   
+  # Function to check if the position is within bounds
+  in_bounds <- function(pos) {
+    r <- pos[1]
+    c <- pos[2]
+    r > 0 && r <= rows && c > 0 && c <= cols
+  }
+  
+  # Function to check if there is an obstacle
+  is_obstacle <- function(pos, temp_map) {
+    r <- pos[1]
+    c <- pos[2]
+    substr(temp_map[r], c, c) == "#"
+  }
+  
   # Function to simulate the patrol
   simulate_patrol <- function(temp_map) {
     guard_pos <- guard_pos
@@ -212,6 +229,100 @@ simulate_guard_with_obstruction <- function(input_map) {
   return(loop_positions)
 }
 
+library(furrr)
+
+simulate_guard_with_obstruction_parallel <- function(input_map) {
+  
+  # Parse the input map
+  map <- str_split(input_map, "\n", simplify = TRUE)
+  rows <- length(map)
+  cols <- nchar(map[1])
+  
+  # Find the guard's starting position and initial direction
+  guard_pos <- NULL
+  guard_dir <- NULL
+  for (r in 1:rows) {
+    for (c in 1:cols) {
+      if (substr(map[r], c, c) %in% c("^", ">", "v", "<")) {
+        guard_pos <- c(r, c)
+        guard_dir <- switch(substr(map[r], c, c),
+                            "^" = "U",
+                            ">" = "R",
+                            "v" = "D",
+                            "<" = "L")
+        break
+      }
+    }
+    if (!is.null(guard_pos)) break
+  }
+  
+  # Function to check if the position is within bounds
+  in_bounds <- function(pos) {
+    r <- pos[1]
+    c <- pos[2]
+    r > 0 && r <= rows && c > 0 && c <= cols
+  }
+  
+  # Function to check if there is an obstacle
+  is_obstacle <- function(pos, temp_map) {
+    r <- pos[1]
+    c <- pos[2]
+    substr(temp_map[r], c, c) == "#"
+  }
+  
+  # Function to simulate the patrol
+  simulate_patrol <- function(temp_map) {
+    guard_pos <- guard_pos
+    guard_dir <- guard_dir
+    visited <- list()
+    
+    repeat {
+      move <- directions[[guard_dir]]
+      front_pos <- guard_pos + move
+      
+      if (!in_bounds(front_pos)) break  # Guard leaves the map
+      
+      if (is_obstacle(front_pos, temp_map)) {
+        # Turn right if there's an obstacle
+        guard_dir <- turn_right(guard_dir)
+      } else {
+        # Move forward if there's no obstacle
+        guard_pos <- front_pos
+        visit_key <- paste(guard_pos, guard_dir, collapse = ",")
+        if (visit_key %in% visited) return(TRUE)  # Loop detected
+        visited <- c(visited, visit_key)
+      }
+    }
+    return(FALSE)
+  }
+  
+  # Identify all empty positions for placing obstructions
+  obstruction_positions <- list()
+  for (r in 1:rows) {
+    for (c in 1:cols) {
+      if (substr(map[r], c, c) == "." && !(r == guard_pos[1] && c == guard_pos[2])) {
+        obstruction_positions <- append(obstruction_positions, list(c(r, c)))
+      }
+    }
+  }
+  
+  # Function to test a single obstruction position
+  test_obstruction <- function(position) {
+    temp_map <- map
+    substr(temp_map[position[1]], position[2], position[2]) <- "#"
+    simulate_patrol(temp_map)
+  }
+  
+  # Parallelize the obstruction testing
+  plan(multisession)  # Use multiple cores
+  results <- future_map(obstruction_positions, test_obstruction, .progress = TRUE)
+  
+  # Count positions that result in a loop
+  loop_positions <- sum(unlist(results))
+  return(loop_positions)
+}
+
+
 ## Results ####
 example_result <- simulate_guard_with_obstruction(example_map)
 print(example_result)
@@ -219,3 +330,4 @@ print(example_result)
 input_result <- simulate_guard_with_obstruction(input_map)
 print(input_result)
 
+input_result_parallel <- simulate_guard_with_obstruction_parallel(input_map)
